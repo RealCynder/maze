@@ -16,4 +16,3 @@ resources/*
 maze
 *.zip
 *.exe
-config.json

@@ -1,6 +1,6 @@
-CC      := clang
-CXX     := clang++
-LD      := clang++
+CC      := gcc
+CXX     := g++
+LD      := g++
 
 INC     := -Isrc
 CFLAGS  := -pedantic -std=c++11 -Wall -g
