@@ -4,7 +4,7 @@
 
 
 sf::RenderWindow window(sf::VideoMode(256, 256), "Maze");
-Maze maze(8, 6);
+Maze maze(16, 16);
 
 
 void update();

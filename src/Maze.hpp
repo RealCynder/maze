@@ -1,7 +1,6 @@
 #ifndef MAZE_HPP
 #define MAZE_HPP
 
-#include <cstddef>
 #include <vector>
 #include <SFML/Graphics.hpp>
 
@@ -16,7 +15,7 @@
 
 struct WallStates
 {
-    bool north, south, east, west;
+    bool north, west, south, east;
 };
 
 
@@ -35,9 +34,10 @@ public:
               float lineThickness = 2.f,
               sf::Color lineColor = sf::Color::White);
     
-private:
     const int height;
     const int width;
+
+private:
     std::vector<std::vector<bool>> horizontalWalls;
     std::vector<std::vector<bool>> verticalWalls;
     

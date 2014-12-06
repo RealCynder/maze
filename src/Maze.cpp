@@ -9,14 +9,13 @@ Maze::Maze(int height, int width) :
     horizontalWalls(height - 1, std::vector<bool>(width)),
     verticalWalls(height, std::vector<bool>(width - 1))
 {
-
 }
 
 
 WallStates Maze::getCellWalls(int i, int j)
 {
     if (i < 0 || j < 0 || i >= height || j >= width)
-        throw std::out_of_range("__func__");
+        throw std::out_of_range(__func__);
 
     WallStates ws;
 
@@ -32,7 +31,7 @@ WallStates Maze::getCellWalls(int i, int j)
 bool Maze::setCellWalls(int i, int j, WallStates ws)
 {
     if (i < 0 || j < 0 || i >= height || j >= width)
-        throw std::out_of_range("__func__");
+        throw std::out_of_range(__func__);
 
     bool error = ((0 == i && !ws.north) ||
                   (0 == j && !ws.west) ||
