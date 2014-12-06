@@ -27,7 +27,7 @@ std::array<bool, 4> Maze::getCellWalls(int i, int j)
 }
 
 
-bool Maze::setCellWalls(int i, int j, WallStates ws)
+bool Maze::setCellWalls(int i, int j, std::array<bool, 4> cw)
 {
     if (i < 0 || j < 0 || i >= m || j >= n)
         throw std::out_of_range(__func__);
