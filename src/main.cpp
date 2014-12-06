@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <cstdlib>
+#include <vector>
 
 
 const int scale = 1;
@@ -13,21 +14,25 @@ bool keyPressed = false;
 
 struct Maze
 {
-    static const int dim = 16; 
-    int8_t hwalls[dim * (dim+1)];
-    int8_t vwalls[dim * (dim+1)];
+    const int h;
+    const int w;
+    std::vector<int8_t> hwalls;
+    std::vector<int8_t> vwalls;
+
+    Maze() = delete;
+    Maze(int w, int h) : h(h), w(w), hwalls((h+1)*w), vwalls(h*(w+1)) {};
 
     void randomize()
     {
-        for (int i = 0; i < dim * (dim+1); ++i)
-        {
+        for (int i = 0; i < (h+1)*w; ++i)
             hwalls[i] = std::rand() % 2;
+        
+        for (int i = 0; i < h*(w+1); ++i)
             vwalls[i] = std::rand() % 2;
-        }
     }
 };
 
-Maze maze;
+Maze maze(16, 14);
 
 
 void update();
@@ -71,11 +76,11 @@ void draw(const Maze& maze)
     window.clear();
 
     line.setSize(sf::Vector2f(2.f, linel));
-    for (int i = 0; i < maze.dim + 1; ++i)
+    for (int i = 0; i < maze.w + 1; ++i)
     {
-        for (int j = 0; j < maze.dim; ++j)
+        for (int j = 0; j < maze.h; ++j)
         {
-            if (maze.vwalls[i*maze.dim + j])
+            if (maze.vwalls[i*maze.h + j])
             {
                 float x = i * linel;
                 float y = j * linel;
@@ -86,11 +91,11 @@ void draw(const Maze& maze)
     }
 
     line.setSize(sf::Vector2f(linel, 2.f));
-    for (int i = 0; i < maze.dim; ++i)
+    for (int i = 0; i < maze.w; ++i)
     {
-        for (int j = 0; j < maze.dim + 1; ++j)
+        for (int j = 0; j < maze.h + 1; ++j)
         {
-            if (maze.hwalls[i*maze.dim + j])
+            if (maze.hwalls[i*maze.h + j])
             {
                 float x = i * linel;
                 float y = j * linel;
