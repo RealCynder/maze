@@ -36,13 +36,16 @@ public:
     Maze(int size) : Maze(size, size) {}
     Maze(int m, int n);
 
-    std::array<bool, 4> getCellWalls(int i, int j);
+    std::array<bool, 4> getCellWalls(int i, int j) const;
     bool setCellWalls(int i, int j, std::array<bool, 4> cw);
+    void fillWith(std::function<std::pair<bool, bool>(int, int)> func);
+    void fill();
+    void clear();
     void randomize();
     void draw(sf::RenderTarget& target,
               float cellSize = 16.f,
               float lineThickness = 2.f,
-              sf::Color lineColor = sf::Color::White);
+              sf::Color lineColor = sf::Color::White) const;
     
     const int m;
     const int n;

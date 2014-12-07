@@ -1,6 +1,8 @@
 #include "Maze.hpp"
 #include <exception>
 #include <cstdlib>
+#include <functional>
+#include <utility>
 
 
 Maze::Maze(int m, int n) :
@@ -12,7 +14,7 @@ Maze::Maze(int m, int n) :
 }
 
 
-std::array<bool, 4> Maze::getCellWalls(int i, int j)
+std::array<bool, 4> Maze::getCellWalls(int i, int j) const
 {
     if (i < 0 || j < 0 || i >= m || j >= n)
         throw std::out_of_range(__func__);
@@ -54,27 +56,57 @@ bool Maze::setCellWalls(int i, int j, std::array<bool, 4> cw)
 }
 
 
-void Maze::randomize()
+void Maze::fillWith(std::function<std::pair<bool, bool>(int, int)> func)
 {
-    for (int i = 0; i < m - 1; ++i)
-    {
-        for (int j = 0; j < n; ++j)
-        {
-            mWalls[i][j] = std::rand() % 2;
-        }
-    }
+    /* Takes a function of the coordinates of each cell that returns the values
+     * of the walls in the +i and +j directions around the cell
+     */
     
     for (int i = 0; i < m; ++i)
     {
-        for (int j = 0; j < n - 1; ++j)
+        for (int j = 0; j < n; ++j)
         {
-            nWalls[i][j] = std::rand() % 2;
+            auto newwalls = func(i, j);
+            auto cw = getCellWalls(i, j);
+            cw[0] = newwalls.first;
+            cw[1] = newwalls.second;
+            setCellWalls(i, j, cw);
         }
     }
 }
 
 
-void Maze::draw(sf::RenderTarget& target, float cellSize, float lineThickness, sf::Color lineColor)
+void Maze::fill()
+{
+    auto func = [](int i, int j)
+        {
+            return std::make_pair(true, true);
+        };
+    fillWith(func);
+}
+
+
+void Maze::clear()
+{
+    auto func = [](int i, int j)
+        {
+            return std::make_pair(false, false);
+        };
+    fillWith(func);
+}
+
+
+void Maze::randomize()
+{
+    auto func = [](int i, int j)
+        {
+            return std::make_pair(rand() % 2, rand() % 2);
+        };
+    fillWith(func);
+}
+
+
+void Maze::draw(sf::RenderTarget& target, float cellSize, float lineThickness, sf::Color lineColor) const
 {
     sf::RectangleShape line;
     line.setFillColor(lineColor);
