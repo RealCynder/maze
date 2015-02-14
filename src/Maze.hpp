@@ -47,13 +47,15 @@ public:
               float lineThickness = 2.f,
               sf::Color lineColor = sf::Color::White) const;
     
-    const int m;
-    const int n;
+    int m() const { return m_; }
+    int n() const { return n_; }
 
 private:
+    int m_;
+    int n_;
+    
     std::vector<std::vector<bool>> mWalls;
     std::vector<std::vector<bool>> nWalls;
-    
 };
 
 
