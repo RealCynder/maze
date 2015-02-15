@@ -16,14 +16,16 @@ const int msize = 16;
 const int nsize = 16;
 Maze<msize, nsize> maze;
 Maze<msize, nsize> undoMaze;
+Maze<msize, nsize> discoveredMaze;
 
-int icursor = 0;
-int jcursor = 0;
-int imark = 0;
-int jmark = 0;
+Node cursor;
+Node mark;
+bool markSet = false;
 
 NodeStack bfsPath;
 bool showBfs = false;
+bool runSim = false;
+sf::Clock clk;
 
 void update();
 void draw();
@@ -89,47 +91,47 @@ void update()
             switch (event.key.code)
             {
             case sf::Keyboard::Key::Down:
-                ++icursor;
-                icursor = icursor < 0 ? 0 : (icursor >= msize ? msize - 1: icursor);
+                ++cursor.i;
+                cursor.i = cursor.i < 0 ? 0 : (cursor.i >= msize ? msize - 1: cursor.i);
                 break;
             case sf::Keyboard::Key::Up:
-                --icursor;
-                icursor = icursor < 0 ? 0 : (icursor >= msize ? msize - 1 : icursor);
+                --cursor.i;
+                cursor.i = cursor.i < 0 ? 0 : (cursor.i >= msize ? msize - 1 : cursor.i);
                 break;
             case sf::Keyboard::Key::Right:
-                ++jcursor;
-                jcursor = jcursor < 0 ? 0 : (jcursor >= nsize ? nsize - 1 : jcursor);
+                ++cursor.j;
+                cursor.j = cursor.j < 0 ? 0 : (cursor.j >= nsize ? nsize - 1 : cursor.j);
                 break;
             case sf::Keyboard::Key::Left:
-                --jcursor;
-                jcursor = jcursor < 0 ? 0 : (jcursor >= nsize ? nsize - 1 : jcursor);
+                --cursor.j;
+                cursor.j = cursor.j < 0 ? 0 : (cursor.j >= nsize ? nsize - 1 : cursor.j);
                 break;
             case sf::Keyboard::Key::S:
                 {
-                    auto cw = maze.getCellWalls(icursor, jcursor);
+                    auto cw = maze.getCellWalls(cursor.i, cursor.j);
                     cw[0] = !cw[0];
-                    maze.setCellWalls(icursor, jcursor, cw);
+                    maze.setCellWalls(cursor.i, cursor.j, cw);
                 }
                 break;
             case sf::Keyboard::Key::D:
                 {
-                    auto cw = maze.getCellWalls(icursor, jcursor);
+                    auto cw = maze.getCellWalls(cursor.i, cursor.j);
                     cw[1] = !cw[1];
-                    maze.setCellWalls(icursor, jcursor, cw);
+                    maze.setCellWalls(cursor.i, cursor.j, cw);
                 }
                 break;
             case sf::Keyboard::Key::W:
                 {
-                    auto cw = maze.getCellWalls(icursor, jcursor);
+                    auto cw = maze.getCellWalls(cursor.i, cursor.j);
                     cw[2] = !cw[2];
-                    maze.setCellWalls(icursor, jcursor, cw);
+                    maze.setCellWalls(cursor.i, cursor.j, cw);
                 }
                 break;
             case sf::Keyboard::Key::A:
                 {
-                    auto cw = maze.getCellWalls(icursor, jcursor);
+                    auto cw = maze.getCellWalls(cursor.i, cursor.j);
                     cw[3] = !cw[3];
-                    maze.setCellWalls(icursor, jcursor, cw);
+                    maze.setCellWalls(cursor.i, cursor.j, cw);
                 }
                 break;
             case sf::Keyboard::Key::C:
@@ -165,11 +167,23 @@ void update()
                 saveMaze(maze);
                 break;
             case sf::Keyboard::Key::Space:
-                imark = icursor;
-                jmark = jcursor;
+                if (cursor == mark && markSet)
+                {
+                    markSet = false;
+                }
+                else
+                {
+                    mark = cursor;
+                    markSet = true;
+                }
                 break;
             case sf::Keyboard::Key::B:
                 showBfs = !showBfs;
+                break;
+            case sf::Keyboard::Key::X:
+                runSim = !runSim;
+                clk.restart();
+                discoveredMaze.clear();
                 break;
             default:
                 break;
@@ -179,18 +193,49 @@ void update()
             break;
         }
     }
+
+    if (showBfs && markSet && !runSim)
+    {
+        bfs(maze, cursor, mark, bfsPath);
+    }
+
+    if (runSim && markSet)
+    {
+        bfs(discoveredMaze, cursor, mark, bfsPath);
+        
+        auto cw = maze.getCellWalls(cursor.i, cursor.j);
+        discoveredMaze.setCellWalls(cursor.i, cursor.j, cw);
+        
+        if (clk.getElapsedTime().asSeconds() >= 0.5f && bfsPath.size() > 1)
+        {
+            clk.restart();
+            bfsPath.pop();
+            auto n = bfsPath.pop();
+            cursor.i = n.i;
+            cursor.j = n.j;
+
+            if (n == mark)
+                markSet = false;
+        }
+    }
 }
 
 
 void draw()
 {
     window.clear();
-    maze.draw(window);
-
-    if (showBfs)
+    if (runSim)
     {
-        bfs(maze, {icursor, jcursor}, {imark, jmark}, bfsPath);
-        
+        maze.draw(window, 16.f, 2.f, sf::Color(255, 255, 255, 127));
+        discoveredMaze.draw(window);
+    }
+    else
+    {
+        maze.draw(window);
+    }
+
+    if (showBfs || runSim)
+    {
         sf::VertexArray path(sf::LinesStrip, bfsPath.size());
         for (int i = 0; i < bfsPath.size(); ++i)
         {
@@ -201,15 +246,18 @@ void draw()
         window.draw(path);
     }
 
-    sf::CircleShape mark(4.f);
-    mark.setPosition(jmark * 16.f + 4.f, imark * 16.f + 4.f);
-    mark.setFillColor(sf::Color::Blue);
-    window.draw(mark);
+    if (markSet)
+    {
+        sf::CircleShape markshape(4.f);
+        markshape.setPosition(mark.j * 16.f + 4.f, mark.i * 16.f + 4.f);
+        markshape.setFillColor(sf::Color::Blue);
+        window.draw(markshape);
+    }
 
-    sf::CircleShape cursor(4.f);
-    cursor.setPosition(jcursor * 16.f + 4.f, icursor * 16.f + 4.f);
-    cursor.setFillColor(sf::Color::Red);
-    window.draw(cursor);
+    sf::CircleShape cursorshape(4.f);
+    cursorshape.setPosition(cursor.j * 16.f + 4.f, cursor.i * 16.f + 4.f);
+    cursorshape.setFillColor(sf::Color::Red);
+    window.draw(cursorshape);
     
     window.display();
 }
