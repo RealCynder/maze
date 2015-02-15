@@ -1,19 +1,49 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
+#include <iostream>
+#include <string>
 #include "Maze.hpp"
-#include <cstdlib>
 
 
 sf::RenderWindow window(sf::VideoMode(256, 256), "Maze");
-Maze maze(16, 16);
-Maze undoMaze  ;
 
+const int msize = 16;
+const int nsize = 16;
+Maze<msize, nsize> maze;
+Maze<msize, nsize> undoMaze;
+
+int icursor = 0;
+int jcursor = 0;
 
 void update();
 void draw();
 
-int icursor = 0;
-int jcursor = 0;
+
+template<int m, int n>
+bool loadMaze(Maze<n, m>& maze)
+{
+    std::cout << "Enter maze string:" << std::endl;
+    std::string mazestr;
+    std::getline(std::cin, mazestr);
+    if (maze.load(mazestr))
+    {
+        std::cout << "Loaded maze" << std::endl;
+        return true;
+    }
+    else
+    {
+        std::cout << "Failed to load maze" << std::endl;
+        return false;
+    }
+}
+
+
+template<int m, int n>
+void saveMaze(Maze<n, m> maze)
+{
+    std::cout << "Maze saved:" << std::endl;
+    std::cout << maze.save() << std::endl;
+}
 
 
 int main()
@@ -47,19 +77,19 @@ void update()
             {
             case sf::Keyboard::Key::Down:
                 ++icursor;
-                icursor = icursor < 0 ? 0 : (icursor >= maze.m() ? maze.m() - 1: icursor);
+                icursor = icursor < 0 ? 0 : (icursor >= msize ? msize - 1: icursor);
                 break;
             case sf::Keyboard::Key::Up:
                 --icursor;
-                icursor = icursor < 0 ? 0 : (icursor >= maze.m() ? maze.m() - 1 : icursor);
+                icursor = icursor < 0 ? 0 : (icursor >= msize ? msize - 1 : icursor);
                 break;
             case sf::Keyboard::Key::Right:
                 ++jcursor;
-                jcursor = jcursor < 0 ? 0 : (jcursor >= maze.n() ? maze.n() - 1 : jcursor);
+                jcursor = jcursor < 0 ? 0 : (jcursor >= nsize ? nsize - 1 : jcursor);
                 break;
             case sf::Keyboard::Key::Left:
                 --jcursor;
-                jcursor = jcursor < 0 ? 0 : (jcursor >= maze.n() ? maze.n() - 1 : jcursor);
+                jcursor = jcursor < 0 ? 0 : (jcursor >= nsize ? nsize - 1 : jcursor);
                 break;
             case sf::Keyboard::Key::S:
                 {
@@ -103,10 +133,23 @@ void update()
                 break;
             case sf::Keyboard::Key::U:
                 {
-                    Maze tmp = maze;
+                    Maze<msize, nsize> tmp = maze;
                     maze = undoMaze;
                     undoMaze = tmp;
                 }
+                break;
+            case sf::Keyboard::Key::L:
+                {
+                    Maze<msize, nsize> tmp;
+                    if (loadMaze(tmp))
+                    {
+                        undoMaze = maze;
+                        maze = tmp;
+                    }
+                }
+                break;
+            case sf::Keyboard::Key::V:
+                saveMaze(maze);
                 break;
             default:
                 break;
@@ -125,11 +168,13 @@ void draw()
 {
     window.clear();
     maze.draw(window);
-    
+
     sf::CircleShape cursor(4.f);
-    cursor.setPosition(jcursor*16.f + 4.f, icursor*16.f + 4.f);
+    cursor.setPosition(jcursor*nsize + 4.f, icursor*msize + 4.f);
     cursor.setFillColor(sf::Color::Red);
     window.draw(cursor);
     
     window.display();
 }
+
+
