@@ -1,14 +1,12 @@
 #ifndef MAZE_HPP
 #define MAZE_HPP
 
-#include <vector>
 #include <array>
 #include <SFML/Graphics.hpp>
-#include <utility>
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include <iostream>
+#include "BitArray2D.hpp"
 
 
 /* The get/setCellsWalls functions take and return arrays of booleans
@@ -56,13 +54,8 @@ public:
               sf::Color lineColor = sf::Color::White) const;
 
 private:
-    std::array<unsigned char, ((m - 1) * n + 7) / 8> mWalls;
-    std::array<unsigned char, (m * (n - 1) + 7) / 8> nWalls;
-
-    bool getMWall(int i, int j) const;
-    bool getNWall(int i, int j) const;
-    void setMWall(int i, int j, bool v);
-    void setNWall(int i, int j, bool v);
+    BitArray2D<m - 1, n> mWalls;
+    BitArray2D<m, n - 1> nWalls;
 };
 
 
@@ -80,10 +73,10 @@ std::array<bool, 4> Maze<m, n>::getCellWalls(int i, int j) const
         return {false, false, false, false};
 
     std::array<bool, 4> cw = {
-        (m - 1 == i) || getMWall(i, j),
-        (n - 1 == j) || getNWall(i, j),
-        (0 == i) || getMWall(i - 1, j),
-        (0 == j) || getNWall(i, j - 1) };
+        (m - 1 == i) || mWalls.get(i, j),
+        (n - 1 == j) || nWalls.get(i, j),
+        (0 == i) || mWalls.get(i - 1, j),
+        (0 == j) || nWalls.get(i, j - 1) };
 
     return cw;
 }
@@ -101,16 +94,16 @@ bool Maze<m, n>::setCellWalls(int i, int j, std::array<bool, 4> cw)
                   (0 == j && !cw[3]));
 
     if (i < m - 1)
-        setMWall(i, j, cw[0]);
+        mWalls.set(i, j, cw[0]);
 
     if (j < n - 1)
-        setNWall(i, j, cw[1]);
+        nWalls.set(i, j, cw[1]);
 
     if (i > 0)
-        setMWall(i - 1, j, cw[2]);
+        mWalls.set(i - 1, j, cw[2]);
 
     if (j > 0)
-        setNWall(i, j - 1, cw[3]);
+        nWalls.set(i, j - 1, cw[3]);
 
     // Returns false if the caller tried to set the boundary walls to false
     return !error;
@@ -120,16 +113,22 @@ bool Maze<m, n>::setCellWalls(int i, int j, std::array<bool, 4> cw)
 template<int m, int n>
 void Maze<m, n>::clear()
 {
-    mWalls.fill(0);
-    nWalls.fill(0);
+    for (int i = 0; i < mWalls.size(); ++i)
+        mWalls[i] = 0;
+    
+    for (int i = 0; i < nWalls.size(); ++i)
+        nWalls[i] = 0;
 }
 
 
 template<int m, int n>
 void Maze<m, n>::fill()
 {
-    mWalls.fill(0xff);
-    nWalls.fill(0xff);
+    for (int i = 0; i < mWalls.size(); ++i)
+        mWalls[i] = 0xff;
+    
+    for (int i = 0; i < nWalls.size(); ++i)
+        nWalls[i] = 0xff;
 }
 
 
@@ -150,8 +149,8 @@ bool Maze<m, n>::load(std::string mazestr)
     std::istringstream ss(mazestr);
     std::string tmp;
 
-    std::array<unsigned char, ((m - 1) * n + 7) / 8> mwTmp;
-    std::array<unsigned char, (m * (n - 1) + 7) / 8> nwTmp;
+    BitArray2D<m - 1, n> mwTmp;
+    BitArray2D<m, n - 1> nwTmp;
     
     try
     {
@@ -170,12 +169,12 @@ bool Maze<m, n>::load(std::string mazestr)
         if (!std::getline(ss, tmp, ':'))
             return false;
         for (int i = 0; i < mwTmp.size(); ++i)
-            mwTmp.at(i) = std::stoi(tmp.substr(i*2, 2), nullptr, 16);
+            mwTmp[i] = std::stoi(tmp.substr(i*2, 2), nullptr, 16);
 
         if (!std::getline(ss, tmp, ':'))
             return false;
         for (int i = 0; i < nwTmp.size(); ++i)
-            nwTmp.at(i) = std::stoi(tmp.substr(i*2, 2), nullptr, 16);
+            nwTmp[i] = std::stoi(tmp.substr(i*2, 2), nullptr, 16);
     }
     catch (...)
     {
@@ -185,7 +184,7 @@ bool Maze<m, n>::load(std::string mazestr)
     for (int i = 0; i < mWalls.size(); ++i)
         mWalls[i] = mwTmp[i];
     for (int i = 0; i < nWalls.size(); ++i)
-        nWalls = nwTmp;
+        nWalls[i] = nwTmp[i];
 
     return true;
 }
@@ -233,7 +232,7 @@ void Maze<m, n>::draw(sf::RenderTarget& target, float cellSize, float lineThickn
     {
         for (int j = 0; j < n; ++j)
         {
-            if (getMWall(i, j))
+            if (mWalls.get(i, j))
             {
                 float x = j * cellSize;
                 float y = (i + 1) * cellSize - lineThickness / 2.f;
@@ -250,7 +249,7 @@ void Maze<m, n>::draw(sf::RenderTarget& target, float cellSize, float lineThickn
     {
         for (int j = 0; j < n - 1; ++j)
         {
-            if (getNWall(i, j))
+            if (nWalls.get(i, j))
             {
                 float x = (j + 1) * cellSize - lineThickness / 2.f;
                 float y = i * cellSize;
@@ -260,36 +259,5 @@ void Maze<m, n>::draw(sf::RenderTarget& target, float cellSize, float lineThickn
         }
     }
 }
-
-
-template<int m, int n>
-bool Maze<m, n>::getMWall(int i, int j) const
-{
-    return (mWalls[(i + j*(m-1))/8] >> ((i + j*(m-1)) % 8)) & 0x1;
-}
-
-
-template<int m, int n>
-bool Maze<m, n>::getNWall(int i, int j) const
-{
-    return (nWalls[(i + j*m)/8] >> ((i + j*m) % 8)) & 0x1;
-}
-
-
-template<int m, int n>
-void Maze<m, n>::setMWall(int i, int j, bool b)
-{
-    mWalls[(i + j*(m-1))/8] &= ~(1 << (i + j*(m-1)) % 8);
-    mWalls[(i + j*(m-1))/8] |= b << (i + j*(m-1)) % 8;
-}
-
-
-template<int m, int n>
-void Maze<m, n>::setNWall(int i, int j, bool b)
-{
-    nWalls[(i + j*m)/8] &= ~(1 << (i + j*m) % 8);
-    nWalls[(i + j*m)/8] |= b << (i + j*m) % 8;
-}
-
 
 #endif // MAZE_HPP
