@@ -20,6 +20,8 @@ Controls
 -----------
 
   - Arrow keys -- Move cursor
+  - Space -- Place mark
+  - B -- Show BFS path from cursor to mark
   - WASD -- Toggle walls around cursor
   - F -- Fill maze with walls
   - C -- Clear walls

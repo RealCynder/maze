@@ -2,7 +2,7 @@
 #define BITARRAY2D_HPP
 
 
-template<int n, int m>
+template<int m, int n>
 class BitArray2D
 {
 public:
