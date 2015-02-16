@@ -2,6 +2,7 @@
 #define BFS_HPP
 
 #include "Maze.hpp"
+#include "BitArray2D.hpp"
 
 #define MAX_NODES (16*16)
 
@@ -108,7 +109,14 @@ private:
 };
 
 
-bool bfs(const Maze<16, 16>& maze, Node start, Node goal, NodeStack& bfsPath);
+bool bfs(const Maze<16, 16>& maze,
+         Node start,
+         Node goal,
+         NodeStack& bfsPath);
 
+bool bfs(const Maze<16, 16>& maze,
+         Node start,
+         const BitArray2D<16, 16>& goals,
+         NodeStack& bfsPath);
 
 #endif // BFS_HPP

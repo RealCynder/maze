@@ -6,13 +6,27 @@
 void permute(int* order);
 
 
-bool bfs(const Maze<16, 16>& maze, Node start, Node goal, NodeStack& bfsPath)
+bool bfs(const Maze<16, 16>& maze,
+         Node start,
+         Node goal,
+         NodeStack& bfsPath)
+{
+    BitArray2D<16, 16> goals;
+    goals.set(goal.i, goal.j, true);
+    return bfs(maze, start, goals, bfsPath);
+}
+
+
+bool bfs(const Maze<16, 16>& maze,
+         Node start,
+         const BitArray2D<16, 16>& goals,
+         NodeStack& bfsPath)  
 {
     bfsPath.clear();
 
-    if (start == goal)
+    if (goals.get(start.i, start.j))
     {
-        bfsPath.push(goal);
+        bfsPath.push(start);
         return true;
     }
     
@@ -54,7 +68,7 @@ bool bfs(const Maze<16, 16>& maze, Node start, Node goal, NodeStack& bfsPath)
                 q.push(u);
             }
 
-            if (u == goal)
+            if (goals.get(u.i, u.j))
             {
                 auto e = edges.pop();
                 bfsPath.push(e.b);

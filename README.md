@@ -23,6 +23,7 @@ Controls
   - Space -- Place mark
   - B -- Show BFS path from cursor to mark
   - X -- Run search simulation from cursor to mark
+  - M -- Map the maze
   - WASD -- Toggle walls around cursor
   - F -- Fill maze with walls
   - C -- Clear walls

@@ -16,6 +16,7 @@ const int nsize = 16;
 Maze<msize, nsize> maze;
 Maze<msize, nsize> undoMaze;
 Maze<msize, nsize> discoveredMaze;
+BitArray2D<msize, nsize> unvisitedNodes;
 
 Node cursor;
 Node mark;
@@ -24,6 +25,7 @@ bool markSet = false;
 NodeStack bfsPath;
 bool showBfs = false;
 bool runSim = false;
+bool mapping = false;
 sf::Clock clk;
 
 void update();
@@ -44,6 +46,8 @@ int main()
     
     // Load default maze
     maze.load("16:16:28802a48080a1a16645d54fd502a165999055c2e355b156fad1acd82a054:04ff96576e952e4bfc0ac88f804964aaac55848b4c06062a2a554cad4e9a");
+
+    cursor.i = msize - 1;
     
     while (window.isOpen())
     {
@@ -184,11 +188,27 @@ void update()
             case sf::Keyboard::Key::X:
                 {
                     runSim = !runSim;
+                    mapping = false;
                     clk.restart();
                     discoveredMaze.clear();
                     auto cw = maze.getCellWalls(cursor.i, cursor.j);
                     discoveredMaze.setCellWalls(cursor.i, cursor.j, cw);
                     bfs(discoveredMaze, cursor, mark, bfsPath);
+                }
+                break;
+
+            // Map the maze
+            case sf::Keyboard::Key::M:
+                {
+                    mapping = !mapping;
+                    runSim = false;
+                    clk.restart();
+                    discoveredMaze.clear();
+                    auto cw = maze.getCellWalls(cursor.i, cursor.j);
+                    discoveredMaze.setCellWalls(cursor.i, cursor.j, cw);
+                    unvisitedNodes.setAll(true);
+                    unvisitedNodes.set(cursor.i, cursor.j, false);
+                    bfs(discoveredMaze, cursor, unvisitedNodes, bfsPath);
                 }
                 break;
                 
@@ -207,7 +227,7 @@ void update()
         bfs(maze, cursor, mark, bfsPath);
     }
 
-    if (runSim && markSet)
+    if ((runSim && markSet) || mapping)
     {
         // Cursor steps along the BFS path every so often
         if (clk.getElapsedTime().asSeconds() >= 0.5f)
@@ -225,11 +245,22 @@ void update()
             discoveredMaze.setCellWalls(cursor.i, cursor.j, cw);
 
             // Run BFS using only the discovered parts of the maze
-            bfs(discoveredMaze, cursor, mark, bfsPath);
+            if (mapping)
+            {
+                unvisitedNodes.set(cursor.i, cursor.j, false);
+                bfs(discoveredMaze, cursor, unvisitedNodes, bfsPath);
+            }
+            else
+            {
+                bfs(discoveredMaze, cursor, mark, bfsPath);
+            }
 
-            // Stop when the mark is reached
-            if (cursor == mark || bfsPath.size() == 0)
+            // Stop when the goal is reached or unreachable
+            if ((runSim && cursor == mark) || bfsPath.size() == 0)
+            {
                 runSim = false;
+                mapping = false;
+            }
         }
     }
 }
@@ -245,13 +276,35 @@ void draw()
         maze.draw(window, 16.f, 2.f, sf::Color(255, 255, 255, 127));
         discoveredMaze.draw(window);
     }
+    else if (mapping)
+    {
+        // Undiscovered parts of the maze are show in gray
+        maze.draw(window, 16.f, 2.f, sf::Color(255, 255, 255, 127));
+        discoveredMaze.draw(window);
+
+        // Mark visited cells
+        sf::CircleShape markshape(2.f);
+        markshape.setFillColor(sf::Color::Cyan);
+        for (int i = 0; i < msize; ++i)
+        {
+            for (int j = 0; j < nsize; ++j)
+            {
+                if (!unvisitedNodes.get(i, j))
+                {
+                    markshape.setPosition(j * 16.f + 6.f, i * 16.f + 6.f);
+                    window.draw(markshape);
+                }
+            }
+        }
+        
+    }
     else
     {
         // Draw maze normally
         maze.draw(window);
     }
     
-    if (showBfs || runSim)
+    if (showBfs)
     {
         // Draw BFS path
         sf::VertexArray path(sf::LinesStrip, bfsPath.size());

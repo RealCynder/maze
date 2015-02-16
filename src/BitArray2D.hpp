@@ -17,6 +17,12 @@ public:
         data[(i + j * m) / 8] |=   b << (i + j * m) % 8;
     }
 
+    void setAll(bool b)
+    {
+        for (int i = 0; i < (m * n + 7) / 8; ++i)
+            data[i] = (b ? 0xff : 0);
+    }
+
     unsigned char operator[](int i) const
     {
         return data[i];

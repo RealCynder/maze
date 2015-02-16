@@ -114,22 +114,16 @@ bool Maze<m, n>::setCellWalls(int i, int j, std::array<bool, 4> cw)
 template<int m, int n>
 void Maze<m, n>::clear()
 {
-    for (int i = 0; i < mWalls.size(); ++i)
-        mWalls[i] = 0;
-    
-    for (int i = 0; i < nWalls.size(); ++i)
-        nWalls[i] = 0;
+    mWalls.setAll(false);
+    nWalls.setAll(false);
 }
 
 
 template<int m, int n>
 void Maze<m, n>::fill()
 {
-    for (int i = 0; i < mWalls.size(); ++i)
-        mWalls[i] = 0xff;
-    
-    for (int i = 0; i < nWalls.size(); ++i)
-        nWalls[i] = 0xff;
+    mWalls.setAll(true);
+    nWalls.setAll(true);
 }
 
 
