@@ -228,7 +228,7 @@ void update()
             bfs(discoveredMaze, cursor, mark, bfsPath);
 
             // Stop when the mark is reached
-            if (cursor == mark)
+            if (cursor == mark || bfsPath.size() == 0)
                 runSim = false;
         }
     }
