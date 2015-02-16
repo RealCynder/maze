@@ -17,6 +17,7 @@ Maze<msize, nsize> maze;
 Maze<msize, nsize> undoMaze;
 Maze<msize, nsize> discoveredMaze;
 BitArray2D<msize, nsize> unvisitedNodes;
+BitArray2D<msize, nsize> inferredNodes;
 
 Node cursor;
 Node mark;
@@ -208,6 +209,7 @@ void update()
                     discoveredMaze.setCellWalls(cursor.i, cursor.j, cw);
                     unvisitedNodes.setAll(true);
                     unvisitedNodes.set(cursor.i, cursor.j, false);
+                    inferredNodes.setAll(false);
                     bfs(discoveredMaze, cursor, unvisitedNodes, bfsPath);
                 }
                 break;
@@ -248,6 +250,26 @@ void update()
             if (mapping)
             {
                 unvisitedNodes.set(cursor.i, cursor.j, false);
+
+                // Infer the contents of a node if all surrounding nodes have been visited
+                for (int i = 0; i < msize; ++i)
+                {
+                    for (int j = 0; j < nsize; ++j)
+                    {
+                        if (!unvisitedNodes.get(i, j))
+                            continue;
+
+                        if ((i + 1 >= msize || !unvisitedNodes.get(i + 1, j)) &&
+                            (j + 1 >= nsize || !unvisitedNodes.get(i, j + 1)) &&
+                            (i - 1 < 0 || !unvisitedNodes.get(i - 1, j)) &&
+                            (j - 1 < 0 || !unvisitedNodes.get(i, j - 1)))
+                        {
+                            unvisitedNodes.set(i, j, false);
+                            inferredNodes.set(i, j, true);
+                        }
+                    }
+                }
+                
                 bfs(discoveredMaze, cursor, unvisitedNodes, bfsPath);
             }
             else
@@ -283,16 +305,24 @@ void draw()
         discoveredMaze.draw(window);
 
         // Mark visited cells
-        sf::CircleShape markshape(2.f);
-        markshape.setFillColor(sf::Color::Cyan);
+        sf::CircleShape visitedshape(2.f);
+        sf::CircleShape inferredshape(2.f);
+        visitedshape.setFillColor(sf::Color::Cyan);
+        inferredshape.setFillColor(sf::Color::Magenta);
         for (int i = 0; i < msize; ++i)
         {
             for (int j = 0; j < nsize; ++j)
             {
                 if (!unvisitedNodes.get(i, j))
                 {
-                    markshape.setPosition(j * 16.f + 6.f, i * 16.f + 6.f);
-                    window.draw(markshape);
+                    visitedshape.setPosition(j * 16.f + 6.f, i * 16.f + 6.f);
+                    window.draw(visitedshape);
+                }
+
+                if (inferredNodes.get(i, j))
+                {
+                    inferredshape.setPosition(j * 16.f + 6.f, i * 16.f + 6.f);
+                    window.draw(inferredshape);
                 }
             }
         }
