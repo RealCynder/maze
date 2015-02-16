@@ -2,6 +2,8 @@
 #include <SFML/System.hpp>
 #include <iostream>
 #include <string>
+#include <ctime>
+#include <cstdlib>
 #include "Maze.hpp"
 #include "BitArray2D.hpp"
 #include "BFS.hpp"
@@ -38,6 +40,8 @@ int coerce(int a, int l, int u)
 
 int main()
 {
+    std::srand(std::time(0));
+    
     // Load default maze
     maze.load("16:16:28802a48080a1a16645d54fd502a165999055c2e355b156fad1acd82a054:04ff96576e952e4bfc0ac88f804964aaac55848b4c06062a2a554cad4e9a");
     

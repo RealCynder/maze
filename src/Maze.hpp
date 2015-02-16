@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <cstdlib>
 #include "BitArray2D.hpp"
 
 
@@ -136,10 +137,10 @@ template<int m, int n>
 void Maze<m, n>::randomize()
 {
     for (int i = 0; i < mWalls.size(); ++i)
-        mWalls[i] = rand() % 256;
+        mWalls[i] = std::rand() % 256;
     
     for (int i = 0; i < nWalls.size(); ++i)
-        nWalls[i] = rand() % 256;
+        nWalls[i] = std::rand() % 256;
 }
 
 
