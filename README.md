@@ -39,7 +39,7 @@ Building on Windows
 You can download a compiler here:
 http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download
 
-Install MinGW 4.9.2 for x86_64 with posix threads and SEH exception handling (build revision 1). The installation folder should have a file called `mingw-w64.bat`. Run this to get a command window with the approriate environment variables set for running the compiler.
+Install MinGW 4.9.2 for x86_64 with posix threads and SEH exception handling. The installation folder should have a file called `mingw-w64.bat`. Run this to get a command window with the approriate environment variables set for running the compiler.
 
 You will also need to install the SFML libraries such that the compiler can find them. Precompiled builds of SFML can be found at:
 http://www.sfml-dev.org/download/sfml/2.2/
