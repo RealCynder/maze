@@ -41,9 +41,9 @@ bool bfs(const Maze<16, 16>& maze,
         auto v = q.pop();
         auto cw = maze.getCellWalls(v.i, v.j);
 
-        int order[4];
-        permute(order);
-        
+        int order[4] = {0, 1, 2, 3};
+        //permute(order);
+
         for (int i = 0; i < 4; ++i)
         {
             int wall = order[i];

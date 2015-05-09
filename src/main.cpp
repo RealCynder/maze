@@ -18,15 +18,20 @@ Maze<msize, nsize> undoMaze;
 Maze<msize, nsize> discoveredMaze;
 BitArray2D<msize, nsize> unvisitedNodes;
 BitArray2D<msize, nsize> inferredNodes;
+BitArray2D<msize, nsize> OptimumNodes;
 
 Node cursor;
 Node mark;
+Node Start;
+Node CurrentIdeal;
 bool markSet = false;
 
 NodeStack bfsPath;
+NodeStack bfsFinal;
 bool showBfs = false;
 bool runSim = false;
 bool mapping = false;
+bool optimize = false;
 sf::Clock clk;
 
 void update();
@@ -34,6 +39,7 @@ void draw();
 void bfs();
 bool loadMaze(Maze<16, 16>& maze);
 void saveMaze(Maze<16, 16> maze);
+float ScorePath(NodeStack Path);
 
 int coerce(int a, int l, int u)
 {
@@ -203,6 +209,8 @@ void update()
                 {
                     mapping = !mapping;
                     runSim = false;
+                    Start = cursor;
+                    CurrentIdeal = cursor;
                     clk.restart();
                     discoveredMaze.clear();
                     auto cw = maze.getCellWalls(cursor.i, cursor.j);
@@ -210,6 +218,7 @@ void update()
                     unvisitedNodes.setAll(true);
                     unvisitedNodes.set(cursor.i, cursor.j, false);
                     inferredNodes.setAll(false);
+
                     bfs(discoveredMaze, cursor, unvisitedNodes, bfsPath);
                 }
                 break;
@@ -223,7 +232,7 @@ void update()
         }
     }
 
-    if (showBfs && markSet && !runSim)
+    if (showBfs && markSet && !runSim && !mapping)
     {
         // Run BFS for display using the entire maze
         bfs(maze, cursor, mark, bfsPath);
@@ -269,19 +278,83 @@ void update()
                         }
                     }
                 }
-                
-                bfs(discoveredMaze, cursor, unvisitedNodes, bfsPath);
+
+                bfs(discoveredMaze, cursor, CurrentIdeal, bfsPath);
+                bfs(discoveredMaze, Start, mark, bfsFinal);
+
+                    OptimumNodes.setAll(false);
+                    Node StackTop;
+                    while (bfsFinal.size() > 0)
+                    {
+                        StackTop = bfsFinal.pop();
+                        if (true == unvisitedNodes.get(StackTop.i,StackTop.j))
+                        {
+                        OptimumNodes.set(StackTop.i, StackTop.j, true);
+                        }
+                    }
+
+                    bfs(discoveredMaze, cursor, OptimumNodes, bfsPath);
+                    CurrentIdeal = bfsPath[bfsPath.size()-1];
+
+                bfs(discoveredMaze, Start, mark, bfsFinal);
             }
             else
             {
                 bfs(discoveredMaze, cursor, mark, bfsPath);
             }
 
+            if(bfsPath.size() == 0)
+            {
+                //initilize todo:
+                //Needs to compare fastest path after further exploration with fastest path previously,
+                //and if the length of the new path is longerm undo changes, and if it is shorter, forget about the imaginary wall, and do process again.
+
+                //Needs to do something after it has completed the check, to ensure it doesen't do itself again and again.
+                //Fortunately this currently does nothing! DO NOT IMPLEMENT (This is the 'find faster paths' bit)
+                NodeStack bfsCheck;
+                NodeStack bfsStore = bfsFinal; NodeStack bfsImprov;
+                Node A = bfsStore.pop(); Node B;
+                int fakewall = 0;
+
+                InitScore = ScorePath(bfsFinal);
+
+                while(bfsStore.size() != 0)
+                {
+                    Node B = bfsStore.pop();
+
+                    if(A.i < B.i)
+                    {fakewall = 0;}
+                    if(A.i > B.i)
+                    {fakewall = 2;}
+                    if(A.j < B.j)
+                    {fakewall = 1;}
+                    if(A.j > B.j)
+                    {fakewall = 3;}
+
+                    Walls = maze.getCellWalls(A.i,A.j);
+                    Walls[fakewall] = true;
+                    maze.setCellWalls(A.i,A.j,Walls);
+
+                    bfs(discoveredMaze, Start, mark, bfsImprov);
+
+                    if(InitScore > ScorePath(bfs(Improv)))
+                    {bfsFinal = bfsImprov;}
+                    else
+                    {
+                        Walls = maze.getCellWalls(A.i,A.j);
+                        Walls[fakewall] = false;
+                        maze.setCellWalls(A.i,A.j,Walls);
+                    }
+                }
+
+
+            }
+
             // Stop when the goal is reached or unreachable
             if ((runSim && cursor == mark) || bfsPath.size() == 0)
             {
                 runSim = false;
-                mapping = false;
+                //mapping = false;
             }
         }
     }
@@ -345,6 +418,16 @@ void draw()
             path[i].color = sf::Color::Green;
         }
         window.draw(path);
+
+        // Draw BFS path
+        sf::VertexArray path2(sf::LinesStrip, bfsFinal.size());
+        for (int i = 0; i < bfsFinal.size(); ++i)
+        {
+            auto n = bfsFinal[i];
+            path2[i].position = {n.j * 16.f + 8.f, n.i * 16.f + 8.f};
+            path2[i].color = sf::Color::Red;
+        }
+        window.draw(path2);
     }
 
     if (markSet)
@@ -389,4 +472,40 @@ void saveMaze(Maze<16, 16> maze)
 {
     std::cout << "Maze saved:" << std::endl;
     std::cout << maze.save() << std::endl;
+}
+
+float ScorePath(NodeStack Path)
+{
+    bool orient = 0;
+    bool turn = 0;
+
+    float Score = 0;
+
+    if(Path.size() == 0)
+    {
+        Score = 129;
+        return Score;
+    }
+
+    current = Path.pop();
+
+    while(Path.size() != 0)
+    {
+        next = Path.pop();
+
+        if(current.i == next.i)
+            {turn = 0;}
+        if(current.j == next.j)
+            {turn = 1;}
+
+        if(orient != turn)
+            {Score = Score+1;}
+        if(orient == turn)
+            {Score = Score+0.5;}
+
+        orient = turn;
+        current = next;
+    }
+
+    return Score;
 }
